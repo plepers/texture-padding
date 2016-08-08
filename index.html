@@ -4,19 +4,29 @@
     <style type="text/css">
 
       #preview, #cvs-wrapper>canvas {
-        width : 256px;
-        height : 256px;
+        width: 45%;
+        height: auto;
+        margin: 10px;
+        border: 1px solid #888;
+        background-image:       url('data:image/png;base64,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');
       }
+
+      .previews {
+        width: 100%;
+      }
+
+
 
     </style>
   </head>
   <body>
 
-    <input type="file" id="file-input" />
+    <input type="file" id="file-input" multiple/>
 
-    <img id='preview'/>
+    <div class='previews' id='cvs-wrapper'>
+      
+      <img id='preview'/>
 
-    <div id='cvs-wrapper'>
     </div>
 
     <script type="text/javascript" src="./main.js"></script>
