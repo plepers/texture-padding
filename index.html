@@ -1,25 +1,49 @@
 <html>
   <head>
     <script type="text/javascript" src="./program.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <style type="text/css">
 
       #preview, #cvs-wrapper>canvas {
-        width : 256px;
-        height : 256px;
+        height: auto;
+        margin: 10px;
+        border: 1px solid #888;
+        background-image:  url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAF0lEQVR4AWM4AwX/oWCgBGAMmMQACQAA9CflgcGPjHwAAAAASUVORK5CYII=')
       }
+
+      .previews {
+        width: 100%;
+      }
+
+      .pbar-wrapper{
+        width:256px;
+        height:12px;
+        background: #ccc;
+      }
+      .pbar-bar{
+        width:0%;
+        height:12px;
+        background: #555;
+      }
+
 
     </style>
   </head>
   <body>
+
     <form>
-      <input type="file" id="file-input" /></br>
+      <input type="file" id="file-input" multiple/></br>
       <label>padding</label>
       <input type="number" id="padding-stepper" name="stepper1" min="1" max="64" value="8" />
     </form>
 
-    <img id='preview'/>
 
-    <div id='cvs-wrapper'>
+    <div class="pbar-wrapper">
+      <div class="pbar-bar" id="pbar"></div>
+    </div>
+    <div class='previews' id='cvs-wrapper'>
+      
+
     </div>
 
     <script type="text/javascript" src="./main.js"></script>

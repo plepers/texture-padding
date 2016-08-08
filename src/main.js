@@ -1,4 +1,5 @@
 var glslify = require('glslify');
+var when = require( 'when' );
 
 var GLArrayBuffer = require('nanogl/arraybuffer'),
     Program       = require('nanogl/program'),
@@ -6,14 +7,15 @@ var GLArrayBuffer = require('nanogl/arraybuffer'),
 
 var State = require('nanogl-state')
 
+var PadProcess = require( './pad-process' )
+var Composer   = require( './composer' )
+
 
 var elFileInput  = document.getElementById('file-input'),
     elImg        = document.getElementById('preview'),
     elCvsWrapper = document.getElementById('cvs-wrapper');
 
 
-
-var outputSize = 2048;
 
 
 
@@ -35,20 +37,21 @@ var stencilCfg,
 
 
 
+
 function initGL(){
 
   cvs = document.createElement( 'canvas' );
-  cvs.width  = outputSize
-  cvs.height = outputSize
+  cvs.width  = 32
+  cvs.height = 32
 
   elCvsWrapper.appendChild( cvs )
 
   gl = cvs.getContext( 'webgl',{
-    stencil:true
+    alpha: true
   });
 
-  setupProgram()
-  setupGeom()
+  gl.clearColor(0, 0, 0, 0)
+
 
   inputTex = new Texture( gl, gl.RGBA );
   inputTex.bind();
@@ -58,24 +61,8 @@ function initGL(){
 
 
   glState = new State(gl);
+  gl.state = glState;
 
-
-  stencilPassCfg = glState.config()
-  stencilPassCfg
-      .enableStencil( true )
-      .stencilFunc( gl.ALWAYS, 1, 0xFF )
-      .stencilOp( gl.KEEP, gl.KEEP, gl.REPLACE )
-      .stencilMask( 0xFF )
-      .colorMask( false, false, false, false )
-      .depthMask( false );
-
-
-  padCfg = glState.config()
-  padCfg
-      .enableStencil( true )
-      .stencilFunc( gl.NOTEQUAL, 0, 0xFF )
-      .stencilOp( gl.REPLACE, gl.REPLACE, gl.REPLACE )
-      .stencilMask( 0xFF );
 
 }
 
@@ -99,39 +86,22 @@ function createInputTexture( img ){
 }
 
 
-function setupProgram( ){
-  padPrg = new Program( gl );
+function render( images ){
 
+  var composer = new Composer( gl );
+  composer.compose( images );
 
+  cvs.width  = composer.size[0];
+  cvs.height = composer.size[1];
 
-  basePrg = new Program( gl );
-  basePrg.compile( 
-    glslify( './base.vert' ),
-    glslify( './base.frag' )
-  )
-
-  stencilPrg = new Program( gl );
-  stencilPrg.compile( 
-    glslify( './stencil_pass.vert' ),
-    glslify( './stencil_pass.frag' )
-  )
-}
-
-
-
-function setupGeom() {
-  var vertices = new Float32Array( [
-    -1, -1,
-    1,  -1,
-    -1,  1,
-    1,   1
-  ] );
-
-
-  fsGeom = new GLArrayBuffer( gl, vertices );
-  fsGeom.attrib( 'aPosition', 2, gl.FLOAT );
+  var process = new PadProcess( gl );
+  process.process( composer.fbo.color );
 
 }
+
+
+
+/*
 
 
 function render() {
@@ -157,7 +127,8 @@ function render() {
 
   var remain = kernel.length / 2;
   var ptr = 0;
-  var passes = 0
+  var passes = 0;
+  
   while( remain > 0 ){
     passes++;
     var nPoints = Math.min( remain, P_PER_PASS );
@@ -188,60 +159,7 @@ function render() {
   console.log( passes )
 
 }
-
-function stencilClip() {
-
-
-
-  stencilPrg.use();
-  stencilPrg.uTex( inputTex );
-  fsGeom.attribPointer( stencilPrg );
-
-  stencilPassCfg.apply()
-  fsGeom.drawTriangleStrip();
-
-
-}
-
-
-function createKernelForRadius( r ){
-
-  var texels = []
-  
-  for (var x = -r; x <= r; x++) {
-    for (var y = -r; y <= r; y++) {
-
-      var dist = Math.sqrt( x*x +y*y );
-      if( dist < r+.5 ){
-
-        texels.push({
-          x:x,
-          y:y,
-          dist:dist
-        });
-
-      }
-
-    } 
-
-  }
-
-  texels = texels.sort( function(a, b){
-    return a.dist - b.dist;
-  })
-
-  var res = new Float32Array( texels.length*2 )
-  for (var i = 0; i < texels.length; i++) {
-    res[i*2+0] = texels[i].x;
-    res[i*2+1] = texels[i].y;
-  }
-
-  return res;
-
-}
-
-
-createKernelForRadius( 3 );
+*/
 
 // -------------------------------------
 // GL SETUP END
@@ -258,33 +176,44 @@ function main(){
 
 
 function openFile( e ){
-  var file = e.target.files[0];
-  if (!file) {
+  var files = e.target.files;
+  if (files.length === 0 ) {
     return;
   }
+  var pa = []
+  for (var i = 0; i < files.length; i++) {
+    pa.push( loadFile(files[i]) );
+  }
+
+  when.all( pa ).then( inputsLoaded );
+ 
+}
+
+
+function inputsLoaded( images ){
+  render( images );
+}
+
+
+
+function loadFile( file ){
+  var def = when.defer();
   var reader = new FileReader();
-  reader.onload = onFileOpened;
+
+  reader.onload = function( e ){
+    var img = new Image();
+    var contents = e.target.result;
+    img.onload = function(){
+      def.resolve( img )
+    };
+    img.src = e.target.result;
+  }
+
   reader.readAsDataURL(file);
-}
-
-function onFileOpened( e ){
-  var contents = e.target.result;
-  elImg.onload = inputLoaded;
-  elImg.src = e.target.result;
+  return def.promise;
 }
 
 
-function inputLoaded( ){
-  inputTex.fromImage( elImg );
-  
-  console.log(elImg.naturalWidth );
-  console.log(elImg.naturalHeight );
 
-  cvs.width  = elImg.naturalWidth  ;
-  cvs.height = elImg.naturalHeight ;
-  gl.viewport( 0, 0, cvs.width, cvs.height )
-
-  render()
-}
 
 main();

@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "nanogl": "^0.3.1",
-    "nanogl-state": "^0.1.11"
+    "nanogl-state": "^0.1.11",
+    "when": "^3.7.7"
   }
 }
