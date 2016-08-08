@@ -3736,6 +3736,9 @@ function Composer( gl ){
     format: gl.RGBA
   })
 
+  this.fbo.color.clamp()
+  this.fbo.color.setFilter( false,false,false );
+
   this.size = [0, 0]
 
   this.cfg = gl.state.config()
@@ -4204,8 +4207,8 @@ PadProcess.prototype = {
     for (var x = -r; x <= r; x++) {
       for (var y = -r; y <= r; y++) {
 
-        var dist = Math.sqrt( x*x +y*y );
-        if( dist < r+.5 ){
+        var dist = Math.sqrt( x*x + y*y );
+        if( dist < (r+.5) ){
 
           texels.push({
             x:x,

@@ -21,6 +21,9 @@ function Composer( gl ){
     format: gl.RGBA
   })
 
+  this.fbo.color.clamp()
+  this.fbo.color.setFilter( false,false,false );
+
   this.size = [0, 0]
 
   this.cfg = gl.state.config()

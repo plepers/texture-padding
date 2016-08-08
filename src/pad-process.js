@@ -161,8 +161,8 @@ PadProcess.prototype = {
     for (var x = -r; x <= r; x++) {
       for (var y = -r; y <= r; y++) {
 
-        var dist = Math.sqrt( x*x +y*y );
-        if( dist < r+.5 ){
+        var dist = Math.sqrt( x*x + y*y );
+        if( dist < (r+.5) ){
 
           texels.push({
             x:x,
